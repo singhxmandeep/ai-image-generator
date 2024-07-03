@@ -1,14 +1,20 @@
-// Author: Mandeep Singh
-
 import React, { useRef, useState } from "react";
 import default_image from "../Assets/AI-image.png"; // Import default image asset
 import { motion } from "framer-motion"; // Import framer-motion for animations
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSun, faMoon } from "@fortawesome/free-solid-svg-icons";
 
 const ImageGenerator = () => {
   const [imageUrl, setImageUrl] = useState("/"); // State to hold generated image URL
   const [loading, setLoading] = useState(false); // State to manage loading state
   const [loadingProgress, setLoadingProgress] = useState(0); // State to manage loading progress
   const inputRef = useRef(null); // Reference to input element for image description
+  const [darkMode, setDarkMode] = useState(true); // State to manage theme
+
+  // Function to toggle theme
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+  };
 
   // Function to handle image generation
   const imageGenerator = async () => {
@@ -46,9 +52,7 @@ const ImageGenerator = () => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Error response from API:", errorData);
-        throw new Error(
-          `Failed to generate image: ${errorData.error.message}`
-        );
+        throw new Error(`Failed to generate image: ${errorData.error.message}`);
       }
 
       // Parse response data and set image URL
@@ -85,7 +89,9 @@ const ImageGenerator = () => {
     const extension = imageUrl.split(".").pop().toLowerCase(); // Get image extension
     const link = document.createElement("a");
     link.href = imageUrl;
-    link.download = `ai-generated-image.${extension === "png" || extension === "jpg" ? extension : "png"}`; // Set download attribute
+    link.download = `ai-generated-image.${
+      extension === "png" || extension === "jpg" ? extension : "png"
+    }`; // Set download attribute
     link.target = "_blank"; // Open in new tab
     document.body.appendChild(link);
     link.click();
@@ -106,7 +112,21 @@ const ImageGenerator = () => {
   };
 
   return (
-    <div className="flex flex-col items-center bg-gray-900 text-white min-h-screen py-8 px-4 md:px-12 lg:px-24">
+    <div
+      className={`flex flex-col items-center ${
+        darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
+      } min-h-screen py-8 px-4 md:px-12 lg:px-24 relative`}
+    >
+      <button
+        className="absolute top-4 right-4 text-white py-2 px-4 rounded-full transition duration-300 ease-in-out hover:bg-white-700"
+        onClick={toggleTheme}
+      >
+        <FontAwesomeIcon
+          icon={darkMode ? faSun : faMoon}
+          style={{ color: darkMode ? "white" : "black" }}
+        />
+      </button>
+
       <div className="text-5xl md:text-6xl font-bold mb-8 text-yellow-400 text-center">
         AI Image{" "}
         <span className="bg-gradient-to-r from-yellow-500 to-purple-500 bg-clip-text text-transparent">
@@ -130,7 +150,7 @@ const ImageGenerator = () => {
             style={{ visibility: loading ? "visible" : "hidden" }} // Show progress bar if loading
           >
             <div
-              className="h-full bg-blue-500 transition-all duration-500 ease-in-out absolute top-0 left-0"
+              className="h-full bg-red-500 transition-all duration-500 ease-in-out absolute top-0 left-0"
               style={{ width: `${loadingProgress}%` }} // Width based on loading progress
             ></div>
           </div>
@@ -165,7 +185,7 @@ const ImageGenerator = () => {
       <div className="flex mt-4">
         {imageUrl !== "/" && (
           <button
-            className="bg-blue-600 text-white py-2 px-4 rounded-full transition duration-300 ease-in-out hover:bg-blue-700 mr-2"
+            className="bg-gradient-to-r from-yellow-500 to-purple-500 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out hover:border-white"
             onClick={downloadImage} // Download image on click
           >
             Download Image
@@ -173,7 +193,7 @@ const ImageGenerator = () => {
         )}
         {imageUrl !== "/" && (
           <button
-            className="bg-blue-600 text-white py-2 px-4 rounded-full transition duration-300 ease-in-out hover:bg-blue-700"
+            className="bg-gradient-to-r from-yellow-500 to-purple-500 text-white font-bold mx-4 py-2 px-6 rounded-full transition duration-300 ease-in-out hover:border-white"
             onClick={copyImageUrl} // Copy image URL on click
           >
             Copy Image URL
