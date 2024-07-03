@@ -1,18 +1,20 @@
-import React, { useRef, useState } from 'react';
-import './ImageGenerator.css'; // Import CSS file for component styles
-import default_image from '../Assets/AI-image.png'; // Import default image asset
+// Author: Mandeep Singh
+
+import React, { useRef, useState } from "react";
+import default_image from "../Assets/AI-image.png"; // Import default image asset
+import { motion } from "framer-motion"; // Import framer-motion for animations
 
 const ImageGenerator = () => {
-  const [imageUrl, setImageUrl] = useState('/'); // State to hold generated image URL
+  const [imageUrl, setImageUrl] = useState("/"); // State to hold generated image URL
   const [loading, setLoading] = useState(false); // State to manage loading state
   const [loadingProgress, setLoadingProgress] = useState(0); // State to manage loading progress
   const inputRef = useRef(null); // Reference to input element for image description
 
   // Function to handle image generation
   const imageGenerator = async () => {
-    const inputValue = inputRef.current.value.trim(); // Get input value
+    const inputValue = inputRef.current.value.trim(); // Get input value and trim whitespace
     if (!inputValue) {
-      alert('Please enter a prompt to generate an image.'); // Alert if input is empty
+      alert("Please enter a prompt to generate an image."); // Alert if input is empty
       return;
     }
 
@@ -25,17 +27,17 @@ const ImageGenerator = () => {
     try {
       // Call OpenAI API to generate image
       const response = await fetch(
-        'https://api.openai.com/v1/images/generations',
+        "https://api.openai.com/v1/images/generations",
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`, // API authorization header
           },
           body: JSON.stringify({
             prompt: inputValue,
             n: 1,
-            size: '512x512',
+            size: "512x512",
           }),
         }
       );
@@ -43,15 +45,20 @@ const ImageGenerator = () => {
       // Handle API response
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error response from API:', errorData);
-        throw new Error(`Failed to generate image: ${errorData.error.message}`);
+        console.error("Error response from API:", errorData);
+        throw new Error(
+          `Failed to generate image: ${errorData.error.message}`
+        );
       }
 
       // Parse response data and set image URL
       const data = await response.json();
-      setImageUrl(data.data[0].url);
+      console.log("API Response Data:", data); // Log the API response data
+      const newImageUrl = data.data[0].url;
+      console.log("New Image URL:", newImageUrl); // Log the new image URL
+      setImageUrl(newImageUrl);
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error("Error generating image:", error);
       alert(`There was an error generating the image: ${error.message}`);
     } finally {
       setLoading(false); // Set loading state to false
@@ -73,49 +80,108 @@ const ImageGenerator = () => {
     }, 1000); // Interval duration in milliseconds (adjust as needed)
   };
 
+  // Function to handle image download
+  const downloadImage = () => {
+    const extension = imageUrl.split(".").pop().toLowerCase(); // Get image extension
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = `ai-generated-image.${extension === "png" || extension === "jpg" ? extension : "png"}`; // Set download attribute
+    link.target = "_blank"; // Open in new tab
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Function to copy image URL to clipboard
+  const copyImageUrl = () => {
+    navigator.clipboard
+      .writeText(imageUrl)
+      .then(() => {
+        alert("Image URL copied to clipboard!"); // Alert on success
+      })
+      .catch((error) => {
+        console.error("Error copying to clipboard:", error);
+        alert(`Failed to copy image URL: ${error.message}`); // Alert on failure
+      });
+  };
+
   return (
-    <div className='ai-image-generator'>
-      <div className='header'>
-        AI Image <span>Generator</span> {/* Header with gradient text */}
+    <div className="flex flex-col items-center bg-gray-900 text-white min-h-screen py-8 px-4 md:px-12 lg:px-24">
+      <div className="text-5xl md:text-6xl font-bold mb-8 text-yellow-400 text-center">
+        AI Image{" "}
+        <span className="bg-gradient-to-r from-yellow-500 to-purple-500 bg-clip-text text-transparent">
+          Generator
+        </span>
       </div>
-      <div className='img-loading'>
-        <div className='image'>
-          <img
-            src={imageUrl === '/' ? default_image : imageUrl} // Display generated image or default image
-            alt='AI generated' // Alt text for image
+      <div className="flex flex-col items-center mb-8 w-full max-w-2xl">
+        <div className="w-full h-64 md:h-96 bg-gray-700 flex items-center justify-center rounded-lg overflow-hidden shadow-lg">
+          <motion.img
+            src={imageUrl === "/" ? default_image : imageUrl} // Display generated image or default image
+            alt="AI generated" // Alt text for image
+            className="object-contain w-full h-full" // Ensure the whole image is shown
+            initial={{ opacity: 0, scale: 0.9 }} // Initial animation state
+            animate={{ opacity: 1, scale: 1 }} // Animate to final state
+            transition={{ duration: 0.5 }} // Animation duration
           />
         </div>
-        {/* Display loading bar and progress text when loading */}
-        {loading && (
-          <div className='loading-bar-container'>
+        <div className="w-full mt-4 relative">
+          <div
+            className="w-full h-2 bg-gray-500 rounded-full relative"
+            style={{ visibility: loading ? "visible" : "hidden" }} // Show progress bar if loading
+          >
             <div
-              className='loading-bar'
+              className="h-full bg-blue-500 transition-all duration-500 ease-in-out absolute top-0 left-0"
               style={{ width: `${loadingProgress}%` }} // Width based on loading progress
             ></div>
-            <div className='loading-text'>{loadingProgress}%</div>
           </div>
-        )}
-        
-        {/* Display full loading text when loading */}
-        <div className={loading ? 'loading-text-full' : 'display-none'}>
+          <div
+            className={
+              loading
+                ? "absolute top-0 left-1/2 transform -translate-x-1/2 text-white text-sm"
+                : "hidden"
+            }
+          >
+            {loadingProgress}%
+          </div>
+        </div>
+        <div className={loading ? "mt-4 text-blue-500" : "hidden"}>
           Loading...
         </div>
       </div>
-      {/* Search box for image description input */}
-      <div className='search-box'>
+      <div className="flex items-center flex-col md:flex-row bg-gray-800 p-4 rounded-full mt-4 gap-4 w-full max-w-2xl">
         <input
-          type='text'
+          type="text"
           ref={inputRef} // Reference to input element
-          className='search-name' // CSS class for input styling
-          placeholder='Describe the image you want to see...' // Placeholder text
+          className="flex-grow h-12 px-4 rounded-l-full bg-gray-800 text-gray-400 outline-none mb-2 md:mb-0"
+          placeholder="Describe the image you want to see..." // Placeholder text
         />
-        {/* Button to trigger image generation */}
-        <div className='generate-btn' onClick={imageGenerator}>
+        <button
+          className="bg-gradient-to-r from-yellow-500 to-purple-500 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out hover:border-white"
+          onClick={imageGenerator} // Generate image on click
+        >
           Generate
-        </div>
+        </button>
+      </div>
+      <div className="flex mt-4">
+        {imageUrl !== "/" && (
+          <button
+            className="bg-blue-600 text-white py-2 px-4 rounded-full transition duration-300 ease-in-out hover:bg-blue-700 mr-2"
+            onClick={downloadImage} // Download image on click
+          >
+            Download Image
+          </button>
+        )}
+        {imageUrl !== "/" && (
+          <button
+            className="bg-blue-600 text-white py-2 px-4 rounded-full transition duration-300 ease-in-out hover:bg-blue-700"
+            onClick={copyImageUrl} // Copy image URL on click
+          >
+            Copy Image URL
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
-export default ImageGenerator; // Export ImageGenerator component
+export default ImageGenerator;
